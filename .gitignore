@@ -1,2 +1,4 @@
-.crokinole-score-keeper
-.idea
+.DS_Store
+.cpcache/
+.nrepl-port
+resources/

@@ -1,0 +1,4 @@
+{:deps {org.clojure/clojure {:mvn/version "1.10.0"}
+        opencv/opencv {:local/root "/Users/niamu/.opencv/3.4.3_2/opencv-343.jar"}
+        opencv/opencv-native {:local/root "/Users/niamu/.opencv/3.4.3_2/opencv-native-343.jar"}}
+ :aliases {:run {:main-opts ["-m" "crokinole-score-keeper.core"]}}}

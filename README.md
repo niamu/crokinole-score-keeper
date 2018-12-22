@@ -1,23 +1,15 @@
-# Crokinole score keeper
+# Crokinole Score Keeper
 
-Machine vision for calculating points in crokinole game in real time as an API and real time video.
+Computer vision for calculating points in crokinole game video.
 
-## Requirements for environment installation
-* Python 3
-* virtualenv
-* pip
+## Requirements
 
-## Install environment
-````
-make env
-````
-
-## Activate virtual environment
-````
-source .crokinole-score-keeper/bin/activate
-````
+* Clojure
+* Java 8+
+* OpenCV (with Java support)
 
 ## Run
+
 ````
-python main.py
+clj -A:run
 ````
