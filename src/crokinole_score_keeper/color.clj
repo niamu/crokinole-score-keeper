@@ -9,14 +9,14 @@
                 (pow (- g1 g2) 2)
                 (pow (- b1 b2) 2))))
 
-(defn avg
+(defn- avg
   [colors]
   (mapv #(Math/sqrt %)
         [(/ (reduce + (map (fn [[r _ _]] (pow r 2)) colors)) (count colors))
          (/ (reduce + (map (fn [[_ g _]] (pow g 2)) colors)) (count colors))
          (/ (reduce + (map (fn [[_ _ b]] (pow b 2)) colors)) (count colors))]))
 
-(defn k-means
+(defn- k-means
   [coll centroids distance-fn avg-fn iterations]
   (let [result (reduce (fn [accl color]
                          (let [[centroid distance]
