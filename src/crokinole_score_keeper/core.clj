@@ -4,12 +4,36 @@
             [crokinole-score-keeper.color :as color])
   (:import [org.opencv.core Core Mat Size]
            [org.opencv.imgproc Imgproc]
-           [org.opencv.videoio VideoCapture VideoWriter Videoio]
+           [org.opencv.videoio VideoCapture]
            [org.opencv.imgcodecs Imgcodecs]))
 
 (clojure.lang.RT/loadLibrary Core/NATIVE_LIBRARY_NAME)
 
 (defonce frames (atom 0))
+
+(defn hypotenuse [x y] (Math/sqrt (+ (Math/pow x 2) (Math/pow y 2))))
+
+(defn point-discs
+  [discs rings]
+  (mapv (fn [{:keys [coords] :as disc}]
+          (reduce (fn [accl [ring-label [ring-x ring-y ring-r]]]
+                    (let [[x y r] coords
+                          side-x (Math/abs (- ring-x x))
+                          side-y (Math/abs (- ring-y y))]
+                      (if (< (hypotenuse side-x side-y)
+                             (- ring-r r))
+                        (assoc accl :points ring-label)
+                        accl)))
+                  disc
+                  rings))
+        discs))
+
+(defn color-discs
+  [discs colors-lookup]
+  (mapv (fn [[x y radius [r g b]]]
+          {:coords [x y radius]
+           :color (get colors-lookup [r g b] [r g b])})
+        discs))
 
 (defn detect-circles
   [frame]
@@ -29,12 +53,13 @@
                               (mapv (fn [[x y radius]]
                                       (let [[b g r] (vec (.get @blur y x))]
                                         [x y radius [r g b]]))))
+        colors-cluster (color/cluster (mapv last normalized-discs))
         colors-lookup (->> (reduce (fn [accl [centroid colors]]
                                      (conj accl (reduce #(conj %1 %2 centroid)
                                                         []
                                                         colors)))
                                    []
-                                   (color/cluster (mapv last normalized-discs)))
+                                   colors-cluster)
                            (apply concat)
                            (apply hash-map))
         r20r (/ (reduce + (map (fn [disc] (nth disc 2)) normalized-discs))
@@ -45,19 +70,24 @@
         ring15 (vec (.get @ring15 0 0))
         ring15-coords (-> ring15 drop-last vec)]
     {:dimensions [(.width frame) (.height frame)]
-     :ring5 (conj ring15-coords (* (last ring15) 3))
-     :ring10 (conj ring15-coords (* (last ring15) 2))
-     :ring15 ring15
-     :ring20 (conj ring15-coords
-                   (/ (last ring15) (* (/ 4 5.5) 8)))
+     5 (conj ring15-coords (* (last ring15) 3))
+     10 (conj ring15-coords (* (last ring15) 2))
+     15 ring15
+     20 (conj ring15-coords
+              (/ (last ring15) (* (/ 4 5.5) 8)))
      :discs normalized-discs
+     :players (apply hash-map (interleave [:player1 :player2]
+                                          (keys colors-cluster)))
      :colors-lookup colors-lookup}))
 
 (defn analyze-image
   ([]
    (analyze-image "resources/crokinole.jpg"))
   ([filename]
-   (detect-circles (Imgcodecs/imread filename))))
+   (let [circles (detect-circles (Imgcodecs/imread filename))]
+     (-> (update-in circles [:discs] color-discs (:colors-lookup circles))
+         (update-in [:discs] point-discs (select-keys circles [5 10 15 20]))
+         (dissoc :colors-lookup)))))
 
 (defn analyze-video
   ([]
